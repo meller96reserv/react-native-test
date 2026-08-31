@@ -21,12 +21,14 @@ export function useSkaterGame() {
   const skaterRef = useRef<View>(null);
   const carRef = useRef<View>(null);
   const cityRef = useRef<View>(null);
+  const roadRef = useRef<View>(null);
   const frameRef = useRef<number | null>(null);
   const phaseRef = useRef<GamePhase>('idle');
   const lastTimeRef = useRef(0);
   const widthRef = useRef(INITIAL_WIDTH);
   const carXRef = useRef(INITIAL_WIDTH + 180);
   const cityXRef = useRef(0);
+  const roadXRef = useRef(0);
   const physicsRef = useRef<PhysicsState>({ jumpHeight: 0, verticalVelocity: 0 });
   const distanceRef = useRef(0);
   const [phase, setPhase] = useState<GamePhase>('idle');
@@ -50,6 +52,9 @@ export function useSkaterGame() {
     });
     cityRef.current?.setNativeProps({
       style: { transform: [{ translateX: cityXRef.current }] },
+    });
+    roadRef.current?.setNativeProps({
+      style: { transform: [{ translateX: roadXRef.current }] },
     });
   }, []);
 
@@ -84,6 +89,11 @@ export function useSkaterGame() {
         speed * 0.16 * delta,
         widthRef.current,
       );
+      roadXRef.current = advanceLoopPosition(
+        roadXRef.current,
+        speed * 0.82 * delta,
+        widthRef.current,
+      );
       distanceRef.current += delta * (speed / 42);
 
       if (carXRef.current < -CAR_WIDTH) carXRef.current = widthRef.current + getRandomGap();
@@ -106,6 +116,7 @@ export function useSkaterGame() {
     physicsRef.current = { jumpHeight: 0, verticalVelocity: 0 };
     carXRef.current = widthRef.current + getRandomGap();
     cityXRef.current = 0;
+    roadXRef.current = 0;
     lastTimeRef.current = 0;
     setScore(0);
     setJumpSequence(0);
@@ -147,6 +158,7 @@ export function useSkaterGame() {
     jumpSequence,
     phase,
     record,
+    roadRef,
     score,
     skaterRef,
   };

@@ -63,6 +63,7 @@ export const SkaterGame = memo(function SkaterGame({ plan }: SkaterGameProps) {
     jumpSequence,
     phase,
     record,
+    roadRef,
     score,
     skaterRef,
   } = useSkaterGame();
@@ -102,9 +103,13 @@ export const SkaterGame = memo(function SkaterGame({ plan }: SkaterGameProps) {
           <CityStrip />
         </View>
         <View style={styles.road}>
-          <View style={styles.roadMarkings}>
-            {ROAD_MARKERS.map((marker) => (
-              <View key={marker} style={styles.roadLine} />
+          <View ref={roadRef} style={styles.roadTrack} pointerEvents="none">
+            {[0, 1].map((strip) => (
+              <View key={strip} style={styles.roadStrip}>
+                {ROAD_MARKERS.map((marker) => (
+                  <View key={marker} style={styles.roadLine} />
+                ))}
+              </View>
             ))}
           </View>
         </View>
@@ -239,13 +244,20 @@ const styles = StyleSheet.create({
     borderTopWidth: 4,
     borderTopColor: '#7441A5',
   },
-  roadMarkings: {
+  roadTrack: {
     position: 'absolute',
+    top: 0,
+    bottom: 0,
     left: 0,
-    right: 0,
-    top: 42,
+    width: '200%',
+    flexDirection: 'row',
+  },
+  roadStrip: {
+    width: '50%',
     flexDirection: 'row',
     justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingTop: 25,
   },
   roadLine: {
     width: 34,
