@@ -1,4 +1,11 @@
-import { getRandomGap, getSpeed, hasCollision, startJump, updatePhysics } from './gameEngine';
+import {
+  advanceLoopPosition,
+  getRandomGap,
+  getSpeed,
+  hasCollision,
+  startJump,
+  updatePhysics,
+} from './gameEngine';
 
 describe('skater game engine', () => {
   it('starts and completes a jump', () => {
@@ -13,6 +20,8 @@ describe('skater game engine', () => {
   it('does not allow a second jump in the air', () => {
     const state = { jumpHeight: 20, verticalVelocity: 100 };
     expect(startJump(state)).toBe(state);
+    const justStarted = { jumpHeight: 0, verticalVelocity: 650 };
+    expect(startJump(justStarted)).toBe(justStarted);
   });
 
   it('detects only low, overlapping collisions', () => {
@@ -26,5 +35,10 @@ describe('skater game engine', () => {
     expect(getSpeed(10_000)).toBe(340);
     expect(getRandomGap(() => 0)).toBe(150);
     expect(getRandomGap(() => 1)).toBe(340);
+  });
+
+  it('wraps the city background without a visible stop', () => {
+    expect(advanceLoopPosition(-90, 20, 100)).toBe(-10);
+    expect(advanceLoopPosition(-20, 15, 100)).toBe(-35);
   });
 });

@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { colors, spacing, typography } from '@/theme/tokens';
 import type { SubscriptionPlan } from '@/session/types';
@@ -9,12 +9,64 @@ import { useGameAudio } from './useGameAudio';
 import { useSkaterGame } from './useSkaterGame';
 
 const ROAD_MARKERS = Array.from({ length: 7 }, (_, index) => index);
+const CITY_PATTERN = [
+  { flex: 0.82, height: '58%', color: '#32184E', rows: 8, columns: 2 },
+  { flex: 1, height: '88%', color: '#482267', rows: 13, columns: 3 },
+  { flex: 0.74, height: '70%', color: '#281340', rows: 10, columns: 2 },
+  { flex: 1.08, height: '96%', color: '#552478', rows: 15, columns: 3 },
+  { flex: 0.78, height: '64%', color: '#351850', rows: 9, columns: 2 },
+  { flex: 0.98, height: '82%', color: '#432060', rows: 12, columns: 3 },
+] as const;
+
+function CityStrip() {
+  return (
+    <View style={styles.cityStrip}>
+      {CITY_PATTERN.map((building, buildingIndex) => (
+        <View
+          key={buildingIndex}
+          style={[
+            styles.building,
+            { backgroundColor: building.color, flex: building.flex, height: building.height },
+          ]}
+        >
+          <View style={styles.windows}>
+            {Array.from({ length: building.rows }, (_, rowIndex) => (
+              <View key={rowIndex} style={styles.windowRow}>
+                {Array.from({ length: building.columns }, (_, columnIndex) => (
+                  <View
+                    key={columnIndex}
+                    style={[
+                      styles.window,
+                      (rowIndex + columnIndex + buildingIndex) % 4 === 0
+                        ? styles.windowPurple
+                        : styles.windowLime,
+                    ]}
+                  />
+                ))}
+              </View>
+            ))}
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
 
 type SkaterGameProps = { plan: SubscriptionPlan };
 
 export const SkaterGame = memo(function SkaterGame({ plan }: SkaterGameProps) {
-  const { carRef, handleLayout, handlePress, phase, record, score, skaterRef } = useSkaterGame();
-  useGameAudio(phase);
+  const {
+    carRef,
+    cityRef,
+    handleLayout,
+    handlePress,
+    jumpSequence,
+    phase,
+    record,
+    score,
+    skaterRef,
+  } = useSkaterGame();
+  useGameAudio(phase, jumpSequence);
   const idle = phase === 'idle';
   const gameOver = phase === 'gameOver';
 
@@ -45,12 +97,10 @@ export const SkaterGame = memo(function SkaterGame({ plan }: SkaterGameProps) {
         onPress={handlePress}
         style={({ pressed }) => [styles.game, pressed && styles.pressed]}
       >
-        <Image
-          accessibilityIgnoresInvertColors
-          resizeMode="cover"
-          source={require('../../../../assets/images/image.png')}
-          style={styles.cityBackground}
-        />
+        <View ref={cityRef} style={styles.cityTrack} pointerEvents="none">
+          <CityStrip />
+          <CityStrip />
+        </View>
         <View style={styles.road}>
           <View style={styles.roadMarkings}>
             {ROAD_MARKERS.map((marker) => (
@@ -132,12 +182,52 @@ const styles = StyleSheet.create({
   },
   pressed: { opacity: 0.96 },
   hidden: { opacity: 0 },
-  cityBackground: {
+  cityTrack: {
     position: 'absolute',
     top: 0,
-    right: 0,
     bottom: 74,
     left: 0,
+    width: '200%',
+    flexDirection: 'row',
+    backgroundColor: '#190B2D',
+  },
+  cityStrip: {
+    width: '50%',
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 5,
+    paddingHorizontal: 5,
+  },
+  building: {
+    minWidth: 34,
+    borderTopLeftRadius: 3,
+    borderTopRightRadius: 3,
+    borderWidth: 1,
+    borderColor: '#6D3295',
+    overflow: 'hidden',
+  },
+  windows: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'space-evenly',
+    paddingVertical: 5,
+  },
+  windowRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    alignItems: 'center',
+  },
+  window: { width: 7, height: 10, borderRadius: 1 },
+  windowLime: {
+    backgroundColor: colors.accent,
+    shadowColor: colors.accent,
+    shadowOpacity: 0.9,
+    shadowRadius: 5,
+  },
+  windowPurple: {
+    backgroundColor: '#D7A8FF',
+    shadowColor: colors.primary,
+    shadowOpacity: 0.8,
+    shadowRadius: 5,
   },
   road: {
     position: 'absolute',

@@ -17,7 +17,7 @@ export function getSpeed(score: number) {
 }
 
 export function startJump(state: PhysicsState): PhysicsState {
-  if (state.jumpHeight > 0) return state;
+  if (state.jumpHeight > 0 || state.verticalVelocity !== 0) return state;
   return { jumpHeight: 0, verticalVelocity: JUMP_VELOCITY };
 }
 
@@ -37,4 +37,9 @@ export function hasCollision(carX: number, jumpHeight: number) {
 
 export function getRandomGap(random = Math.random) {
   return 150 + Math.round(random() * 190);
+}
+
+export function advanceLoopPosition(position: number, distance: number, loopWidth: number) {
+  const nextPosition = position - distance;
+  return nextPosition <= -loopWidth ? nextPosition + loopWidth : nextPosition;
 }

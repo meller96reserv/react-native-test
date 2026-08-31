@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, type LayoutChangeEvent, type View } from 'react-native';
 
 import {
+  advanceLoopPosition,
   CAR_WIDTH,
   getRandomGap,
   getSpeed,
@@ -19,16 +20,19 @@ type GamePhase = 'idle' | 'running' | 'gameOver';
 export function useSkaterGame() {
   const skaterRef = useRef<View>(null);
   const carRef = useRef<View>(null);
+  const cityRef = useRef<View>(null);
   const frameRef = useRef<number | null>(null);
   const phaseRef = useRef<GamePhase>('idle');
   const lastTimeRef = useRef(0);
   const widthRef = useRef(INITIAL_WIDTH);
   const carXRef = useRef(INITIAL_WIDTH + 180);
+  const cityXRef = useRef(0);
   const physicsRef = useRef<PhysicsState>({ jumpHeight: 0, verticalVelocity: 0 });
   const distanceRef = useRef(0);
   const [phase, setPhase] = useState<GamePhase>('idle');
   const [score, setScore] = useState(0);
   const [record, setRecord] = useState(0);
+  const [jumpSequence, setJumpSequence] = useState(0);
 
   useEffect(() => {
     void AsyncStorage.getItem(RECORD_KEY).then((stored) => {
@@ -43,6 +47,9 @@ export function useSkaterGame() {
     });
     carRef.current?.setNativeProps({
       style: { transform: [{ translateX: carXRef.current }] },
+    });
+    cityRef.current?.setNativeProps({
+      style: { transform: [{ translateX: cityXRef.current }] },
     });
   }, []);
 
@@ -72,6 +79,11 @@ export function useSkaterGame() {
       physicsRef.current = updatePhysics(physicsRef.current, delta);
       const speed = getSpeed(Math.floor(distanceRef.current));
       carXRef.current -= speed * delta;
+      cityXRef.current = advanceLoopPosition(
+        cityXRef.current,
+        speed * 0.16 * delta,
+        widthRef.current,
+      );
       distanceRef.current += delta * (speed / 42);
 
       if (carXRef.current < -CAR_WIDTH) carXRef.current = widthRef.current + getRandomGap();
@@ -93,8 +105,10 @@ export function useSkaterGame() {
     distanceRef.current = 0;
     physicsRef.current = { jumpHeight: 0, verticalVelocity: 0 };
     carXRef.current = widthRef.current + getRandomGap();
+    cityXRef.current = 0;
     lastTimeRef.current = 0;
     setScore(0);
+    setJumpSequence(0);
     setPhase('running');
     phaseRef.current = 'running';
     placeSprites();
@@ -106,7 +120,11 @@ export function useSkaterGame() {
       startGame();
       return;
     }
-    physicsRef.current = startJump(physicsRef.current);
+    const nextPhysics = startJump(physicsRef.current);
+    if (nextPhysics !== physicsRef.current) {
+      physicsRef.current = nextPhysics;
+      setJumpSequence((current) => current + 1);
+    }
   }, [startGame]);
 
   const handleLayout = useCallback((event: LayoutChangeEvent) => {
@@ -121,5 +139,15 @@ export function useSkaterGame() {
     [],
   );
 
-  return { carRef, handleLayout, handlePress, phase, record, score, skaterRef };
+  return {
+    carRef,
+    cityRef,
+    handleLayout,
+    handlePress,
+    jumpSequence,
+    phase,
+    record,
+    score,
+    skaterRef,
+  };
 }
