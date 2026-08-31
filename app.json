@@ -1,12 +1,13 @@
 {
   "expo": {
-    "name": "Focus Flow",
+    "name": "Skate Escape",
     "slug": "focus-flow",
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "focusflow",
-    "userInterfaceStyle": "light",
-    "plugins": ["expo-router"],
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#100718",
+    "plugins": ["expo-router", "expo-audio", "expo-font"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.example.focusflow"

@@ -1,21 +1,52 @@
-# Focus Flow
+# Skate Escape
 
-Небольшое Expo-приложение, демонстрирующее воронку onboarding → paywall → home. Покупка
-эмулируется локально: после неё подписка сохраняется, и следующий запуск сразу открывает home.
+Небольшая бесконечная аркада на React Native и Expo. Игрок управляет скейтером, перепрыгивает
+полицейские машины, набирает дистанцию и сохраняет лучший результат между запусками.
+
+Перед игрой пользователь проходит тематический onboarding и тестовый paywall. Покупка полностью
+эмулируется: реальные деньги и платёжные данные не используются.
+
+## Возможности
+
+- onboarding и Skate Pass с тарифами «Месяц» и «Год»;
+- сохранение выбранной подписки в AsyncStorage;
+- автоматический переход к игре при следующем запуске;
+- полноэкранная бесконечная игра с постепенно растущей скоростью;
+- случайные интервалы появления полицейских машин;
+- прыжок по нажатию, collision detection и быстрый перезапуск;
+- сохранение рекорда в AsyncStorage;
+- фоновая музыка во время заезда и отдельный звук столкновения;
+- тёмная фиолетовая тема с неоновыми акцентами и шрифтом Bebas Neue;
+- поддержка VoiceOver-состояний для основных интерактивных элементов.
 
 ## Запуск
 
-Требования: Node.js 22.13+ или 24+, npm, Expo Go либо Android/iOS simulator.
+Требования: Node.js 22.13+ или 24+, npm и Expo Go с поддержкой SDK 54.
 
 ```bash
 npm install
-npm start
+npx expo start --clear
 ```
 
-После запуска нажмите `a` для Android или `i` для iOS. На Windows iOS Simulator недоступен;
-приложение можно открыть на физическом iPhone через Expo Go.
+После запуска:
 
-Проверки:
+- нажмите `a`, чтобы открыть Android;
+- нажмите `i`, чтобы открыть iOS Simulator на macOS;
+- отсканируйте QR-код камерой iPhone, чтобы открыть проект в Expo Go.
+
+iPhone и компьютер должны находиться в одной локальной сети. На Windows iOS Simulator
+недоступен, поэтому для проверки iOS используется физический iPhone с Expo Go.
+
+## Управление
+
+1. Нажмите на игровое поле, чтобы начать заезд.
+2. Нажимайте повторно, чтобы перепрыгивать машины.
+3. После столкновения нажмите на поле для новой попытки.
+
+Текущая дистанция отображается над игрой, активный Skate Pass — под названием, а рекорд — в нижней
+части Home-экрана.
+
+## Проверки
 
 ```bash
 npm run format:check
@@ -24,39 +55,56 @@ npm run typecheck
 npm test -- --runInBand
 ```
 
+Тестами покрыты игровая физика, столкновения, диапазон сложности, session reducer, persistence и
+ключевые состояния интерфейса.
+
 ## Архитектура
 
-- Expo Router отвечает за тонкий слой маршрутов и redirects.
-- React Context + `useReducer` хранит небольшое глобальное session-состояние.
-- State и actions находятся в разных контекстах, чтобы снизить лишние ререндеры.
-- AsyncStorage adapter сохраняет versioned subscription record и валидирует данные при чтении.
-- Feature-модули содержат экраны onboarding, paywall и home; UI-kit и theme используются совместно.
-- Пока storage гидратируется, показывается отдельный launch view без мигания onboarding.
+- Expo Router отвечает за маршруты и защитные redirects.
+- React Context + `useReducer` хранит session state; state и actions разделены по контекстам.
+- AsyncStorage adapter валидирует versioned subscription record перед использованием.
+- Игровой цикл работает через один `requestAnimationFrame`.
+- Координаты спрайтов обновляются через native props; React обновляет только отображаемый счёт.
+- Чистые функции физики и collision detection отделены от React и покрыты unit-тестами.
+- Expo Audio управляет жизненным циклом музыки и звука столкновения.
+- Дизайн-токены и типографика централизованы в `src/theme`.
 
-Подробное обоснование находится в [docs/architecture.md](docs/architecture.md), актуальный прогресс —
-в [docs/todo.md](docs/todo.md).
+Подробнее: [docs/architecture.md](docs/architecture.md) и [docs/todo.md](docs/todo.md).
 
 ## Структура
 
 ```text
-app/             маршруты Expo Router
-src/components/  общие UI-компоненты
-src/features/    экраны и feature-компоненты
-src/session/     state machine, provider и hooks
-src/storage/     persistence adapter и runtime parser
-src/theme/       дизайн-токены
-docs/            архитектура, план и сценарий демонстрации
+app/                        маршруты Expo Router
+assets/audio/               локальные игровые аудиофайлы
+src/components/             общие UI-компоненты
+src/features/home/game/     игровая сцена, engine, audio и тесты
+src/features/onboarding/    тематический onboarding
+src/features/paywall/       Skate Pass и тарифы
+src/session/                session state, provider и hooks
+src/storage/                persistence подписки
+src/theme/                  палитра и типографика
+docs/                       архитектура и план реализации
 ```
+
+## Локальные данные
+
+- подписка: `@focus-flow/subscription`;
+- игровой рекорд: `@focus-flow/skater-record`.
+
+Чтобы полностью повторить сценарий первого запуска, очистите данные проекта в Expo Go или удалите
+оба ключа из AsyncStorage.
+
+## Аудио и лицензирование
+
+Репозиторий содержит добавленный владельцем проекта коммерческий музыкальный файл. Перед публичным
+распространением приложения владелец должен подтвердить права на использование и распространение
+этого трека либо заменить его на лицензированную музыку.
 
 ## Что улучшить для production
 
-- заменить эмуляцию на RevenueCat/StoreKit/Google Play Billing и добавить restore purchases;
-- валидировать entitlement на сервере и синхронизировать его между устройствами;
-- добавить локализацию, privacy/terms, аналитику воронки и crash reporting;
-- добавить Maestro/Detox E2E, CI и визуальные regression-тесты;
-- провести тесты на реальном наборе Android/iOS устройств и accessibility-аудит.
-
-## Ограничения демо
-
-Цены фиктивны, деньги не списываются. Сбросить сценарий первого запуска можно очисткой данных
-приложения или удалением ключа `@focus-flow/subscription` из AsyncStorage.
+- заменить эмуляцию подписки на StoreKit/Google Play Billing или RevenueCat;
+- добавить restore purchases и серверную проверку entitlement;
+- перенести игровой цикл на UI runtime при усложнении сцены;
+- добавить паузу и независимые настройки громкости музыки/эффектов;
+- добавить локализацию, аналитику, crash reporting и E2E-тесты;
+- провести accessibility- и performance-аудит на реальных Android/iOS устройствах.

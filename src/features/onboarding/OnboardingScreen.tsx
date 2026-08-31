@@ -17,18 +17,21 @@ export function OnboardingScreen() {
 
   return (
     <Screen contentStyle={styles.content} testID="onboarding-screen">
-      <View style={styles.hero} accessibilityLabel="Абстрактная иллюстрация спокойного фокуса">
-        <View style={styles.orbit} />
-        <View style={styles.sun} />
-        <View style={styles.leaf} />
+      <View style={styles.hero} accessibilityLabel="Скейтборд на рампе">
+        <View style={styles.ramp} />
+        <View style={styles.skateboard}>
+          <View style={styles.deck} />
+          <View style={styles.wheelLeft} />
+          <View style={styles.wheelRight} />
+        </View>
       </View>
       <View style={styles.copy}>
-        <Text style={styles.eyebrow}>FOCUS FLOW</Text>
+        <Text style={styles.eyebrow}>SKATE ESCAPE</Text>
         <Text accessibilityRole="header" style={styles.title}>
-          Меньше шума.{`\n`}Больше важного.
+          Прыгай выше.{`\n`}Уезжай дальше.
         </Text>
         <Text style={styles.description}>
-          Небольшие ежедневные ритуалы помогают удерживать внимание и двигаться к цели.
+          Разгоняйся по улицам, перепрыгивай полицейские машины и ставь новый рекорд.
         </Text>
       </View>
       <PrimaryButton
@@ -50,25 +53,42 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  orbit: {
+  ramp: {
     position: 'absolute',
-    width: 210,
-    height: 210,
-    borderRadius: 105,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.35)',
+    width: 230,
+    height: 120,
+    left: -28,
+    bottom: -44,
+    borderTopRightRadius: 120,
+    backgroundColor: '#5B21B6',
+    transform: [{ rotate: '-4deg' }],
   },
-  sun: { width: 96, height: 96, borderRadius: 48, backgroundColor: colors.accent },
-  leaf: {
+  skateboard: {
     position: 'absolute',
-    width: 68,
-    height: 108,
-    right: 34,
-    bottom: 25,
-    borderTopLeftRadius: 68,
-    borderBottomRightRadius: 68,
-    backgroundColor: '#80B99A',
-    transform: [{ rotate: '18deg' }],
+    width: 132,
+    height: 40,
+    right: 42,
+    top: 92,
+    transform: [{ rotate: '-14deg' }],
+  },
+  deck: { width: 132, height: 14, borderRadius: 9, backgroundColor: colors.accent },
+  wheelLeft: {
+    position: 'absolute',
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    left: 20,
+    top: 15,
+    backgroundColor: colors.ink,
+  },
+  wheelRight: {
+    position: 'absolute',
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    right: 20,
+    top: 15,
+    backgroundColor: colors.ink,
   },
   copy: { marginVertical: spacing.xl },
   eyebrow: { ...typography.caption, color: colors.primary, letterSpacing: 2 },

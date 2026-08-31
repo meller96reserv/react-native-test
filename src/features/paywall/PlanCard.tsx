@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
   },
-  selected: { borderColor: colors.primary, backgroundColor: '#F5FAF7' },
+  selected: { borderColor: colors.accent, backgroundColor: '#28143D' },
   pressed: { opacity: 0.86 },
   disabled: { opacity: 0.6 },
   radio: {
@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
   title: { ...typography.heading, color: colors.ink },
   badge: {
     ...typography.caption,
-    color: colors.ink,
+    color: colors.canvas,
     backgroundColor: colors.accent,
     borderRadius: radius.pill,
     paddingHorizontal: spacing.sm,

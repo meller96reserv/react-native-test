@@ -31,12 +31,12 @@ export function PaywallScreen() {
   return (
     <Screen contentStyle={styles.content} scrollable testID="paywall-screen">
       <View>
-        <Text style={styles.eyebrow}>ПРЕМИУМ-ДОСТУП</Text>
+        <Text style={styles.eyebrow}>SKATE PASS</Text>
         <Text accessibilityRole="header" style={styles.title}>
-          Ваш фокус —{`\n`}без ограничений
+          Улицы ждут.{`\n`}Выбирай заезд.
         </Text>
         <Text style={styles.description}>
-          Все практики, персональные серии и спокойная статистика прогресса.
+          Открой бесконечный заезд, перепрыгивай патрули и сохраняй лучший результат.
         </Text>
       </View>
 
@@ -68,7 +68,7 @@ export function PaywallScreen() {
           onPress={handlePurchase}
           testID="purchase-button"
         />
-        <Text style={styles.disclaimer}>Тестовая покупка · списания не производятся</Text>
+        <Text style={styles.disclaimer}>Тестовый Skate Pass · списания не производятся</Text>
       </View>
     </Screen>
   );

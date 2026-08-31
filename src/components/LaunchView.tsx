@@ -6,9 +6,9 @@ export function LaunchView() {
   return (
     <View accessibilityLabel="Загрузка приложения" style={styles.container} testID="launch-view">
       <View style={styles.mark}>
-        <Text style={styles.markText}>F</Text>
+        <Text style={styles.markText}>S</Text>
       </View>
-      <Text style={styles.title}>Focus Flow</Text>
+      <Text style={styles.title}>Skate Escape</Text>
       <ActivityIndicator color={colors.primary} style={styles.spinner} />
     </View>
   );
@@ -30,7 +30,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  markText: { ...typography.title, color: colors.ink },
+  markText: { ...typography.title, color: colors.canvas },
   title: { ...typography.heading, color: colors.ink, marginTop: spacing.md },
   spinner: { marginTop: spacing.lg },
 });

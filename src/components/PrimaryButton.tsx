@@ -35,7 +35,7 @@ export const PrimaryButton = memo(function PrimaryButton({
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={colors.surface} />
+        <ActivityIndicator color={colors.canvas} />
       ) : (
         <Text style={styles.label}>{label}</Text>
       )}
@@ -54,5 +54,5 @@ const styles = StyleSheet.create({
   },
   pressed: { backgroundColor: colors.primaryPressed, transform: [{ scale: 0.99 }] },
   disabled: { opacity: 0.55 },
-  label: { ...typography.label, color: colors.surface },
+  label: { ...typography.label, color: colors.canvas },
 });

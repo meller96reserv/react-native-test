@@ -15,7 +15,7 @@ export const PLANS = [
     title: 'Месяц',
     price: '399 ₽',
     cadence: 'в месяц',
-    detail: 'Гибкая ежемесячная подписка',
+    detail: 'Месяц бесконечных уличных заездов',
   },
   {
     id: 'yearly',
@@ -23,6 +23,6 @@ export const PLANS = [
     price: '2 390 ₽',
     cadence: 'в год · 199 ₽/мес',
     badge: '−50%',
-    detail: 'Экономия 2 398 ₽ по сравнению с месяцем',
+    detail: 'Целый сезон и экономия 2 398 ₽',
   },
 ] as const satisfies readonly [Plan, Plan];
