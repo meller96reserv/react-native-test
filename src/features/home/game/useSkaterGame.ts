@@ -1,165 +1,177 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, type LayoutChangeEvent, type View } from 'react-native';
+import { type LayoutChangeEvent, type TextInput } from 'react-native';
+import {
+  runOnJS,
+  useAnimatedStyle,
+  useFrameCallback,
+  useSharedValue,
+} from 'react-native-reanimated';
 
 import {
   advanceLoopPosition,
   CAR_WIDTH,
   getRandomGap,
   getSpeed,
+  GRAVITY,
   hasCollision,
-  startJump,
-  updatePhysics,
-  type PhysicsState,
+  hasPassedCar,
+  JUMP_VELOCITY,
+  shouldFlipOverCar,
 } from './gameEngine';
-
-const RECORD_KEY = '@focus-flow/skater-record';
-const INITIAL_WIDTH = 320;
-type GamePhase = 'idle' | 'running' | 'gameOver';
+import { FLIP_DEGREES_PER_SECOND, INITIAL_GAME_WIDTH, MIN_CAR_GAP } from './gameConfig';
+import type { GamePhase, JumpKind } from './gameTypes';
+import { useGameRecord } from './useGameRecord';
 
 export function useSkaterGame() {
-  const skaterRef = useRef<View>(null);
-  const carRef = useRef<View>(null);
-  const cityRef = useRef<View>(null);
-  const roadRef = useRef<View>(null);
-  const frameRef = useRef<number | null>(null);
-  const phaseRef = useRef<GamePhase>('idle');
-  const lastTimeRef = useRef(0);
-  const widthRef = useRef(INITIAL_WIDTH);
-  const carXRef = useRef(INITIAL_WIDTH + 180);
-  const cityXRef = useRef(0);
-  const roadXRef = useRef(0);
-  const physicsRef = useRef<PhysicsState>({ jumpHeight: 0, verticalVelocity: 0 });
-  const distanceRef = useRef(0);
+  const width = useSharedValue(INITIAL_GAME_WIDTH);
+  const carX = useSharedValue(INITIAL_GAME_WIDTH + MIN_CAR_GAP);
+  const cityX = useSharedValue(0);
+  const roadX = useSharedValue(0);
+  const jumpHeight = useSharedValue(0);
+  const verticalVelocity = useSharedValue(0);
+  const passedCars = useSharedValue(0);
+  const countedCurrentCar = useSharedValue(false);
+  const isFlipping = useSharedValue(false);
+  const flipRotation = useSharedValue(0);
+  const running = useSharedValue(false);
+  const scoreRef = useRef<TextInput>(null);
   const [phase, setPhase] = useState<GamePhase>('idle');
   const [score, setScore] = useState(0);
-  const [record, setRecord] = useState(0);
-  const [jumpSequence, setJumpSequence] = useState(0);
+  const { record, saveRecord } = useGameRecord();
 
-  useEffect(() => {
-    void AsyncStorage.getItem(RECORD_KEY).then((stored) => {
-      const parsed = Number(stored);
-      if (Number.isSafeInteger(parsed) && parsed > 0) setRecord(parsed);
-    });
+  const publishScore = useCallback((nextScore: number) => {
+    scoreRef.current?.setNativeProps({ text: `${nextScore} 🚓` });
   }, []);
 
-  const placeSprites = useCallback(() => {
-    skaterRef.current?.setNativeProps({
-      style: { transform: [{ translateY: -physicsRef.current.jumpHeight }] },
-    });
-    carRef.current?.setNativeProps({
-      style: { transform: [{ translateX: carXRef.current }] },
-    });
-    cityRef.current?.setNativeProps({
-      style: { transform: [{ translateX: cityXRef.current }] },
-    });
-    roadRef.current?.setNativeProps({
-      style: { transform: [{ translateX: roadXRef.current }] },
-    });
-  }, []);
-
-  const finishGame = useCallback((finalScore: number) => {
-    phaseRef.current = 'gameOver';
-    setPhase('gameOver');
-    setRecord((currentRecord) => {
-      if (finalScore <= currentRecord) return currentRecord;
-      void AsyncStorage.setItem(RECORD_KEY, String(finalScore));
-      return finalScore;
-    });
-  }, []);
-
-  const tick = useCallback(
-    (timestamp: number) => {
-      if (phaseRef.current !== 'running') return;
-      if (AppState.currentState !== 'active') {
-        lastTimeRef.current = timestamp;
-        frameRef.current = requestAnimationFrame(tick);
-        return;
-      }
-
-      const elapsed = lastTimeRef.current === 0 ? 0 : (timestamp - lastTimeRef.current) / 1_000;
-      const delta = Math.min(elapsed, 0.034);
-      lastTimeRef.current = timestamp;
-
-      physicsRef.current = updatePhysics(physicsRef.current, delta);
-      const speed = getSpeed(Math.floor(distanceRef.current));
-      carXRef.current -= speed * delta;
-      cityXRef.current = advanceLoopPosition(
-        cityXRef.current,
-        speed * 0.16 * delta,
-        widthRef.current,
-      );
-      roadXRef.current = advanceLoopPosition(
-        roadXRef.current,
-        speed * 0.82 * delta,
-        widthRef.current,
-      );
-      distanceRef.current += delta * (speed / 42);
-
-      if (carXRef.current < -CAR_WIDTH) carXRef.current = widthRef.current + getRandomGap();
-
-      const nextScore = Math.floor(distanceRef.current);
-      setScore((current) => (current === nextScore ? current : nextScore));
-      placeSprites();
-
-      if (hasCollision(carXRef.current, physicsRef.current.jumpHeight)) {
-        finishGame(nextScore);
-        return;
-      }
-      frameRef.current = requestAnimationFrame(tick);
+  const finishGame = useCallback(
+    (finalScore: number) => {
+      scoreRef.current?.setNativeProps({ text: `${finalScore} 🚓` });
+      setScore(finalScore);
+      setPhase('gameOver');
+      saveRecord(finalScore);
     },
-    [finishGame, placeSprites],
+    [saveRecord],
   );
 
+  const frameCallback = useFrameCallback((frame) => {
+    'worklet';
+    if (!running.value || frame.timeSincePreviousFrame === null) return;
+
+    const delta = Math.min(frame.timeSincePreviousFrame / 1_000, 0.034);
+    verticalVelocity.value -= GRAVITY * delta;
+    jumpHeight.value = Math.max(0, jumpHeight.value + verticalVelocity.value * delta);
+    if (isFlipping.value) {
+      flipRotation.value = Math.min(360, flipRotation.value + FLIP_DEGREES_PER_SECOND * delta);
+    }
+    if (jumpHeight.value === 0) {
+      verticalVelocity.value = 0;
+      isFlipping.value = false;
+      flipRotation.value = 0;
+    }
+
+    const speed = getSpeed(passedCars.value);
+    carX.value -= speed * delta;
+    cityX.value = advanceLoopPosition(cityX.value, speed * 0.16 * delta, width.value);
+    roadX.value = advanceLoopPosition(roadX.value, speed * 0.82 * delta, width.value);
+
+    if (!countedCurrentCar.value && hasPassedCar(carX.value)) {
+      countedCurrentCar.value = true;
+      passedCars.value += 1;
+      runOnJS(publishScore)(passedCars.value);
+    }
+
+    if (carX.value < -CAR_WIDTH) {
+      carX.value = width.value + getRandomGap();
+      countedCurrentCar.value = false;
+    }
+
+    if (hasCollision(carX.value, jumpHeight.value)) {
+      running.value = false;
+      runOnJS(finishGame)(passedCars.value);
+    }
+  });
+
+  useEffect(() => {
+    frameCallback.setActive(phase === 'running');
+    return () => frameCallback.setActive(false);
+  }, [frameCallback, phase]);
+
+  const skaterStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: -jumpHeight.value }, { rotateZ: `${flipRotation.value}deg` }],
+  }));
+  const carStyle = useAnimatedStyle(() => ({ transform: [{ translateX: carX.value }] }));
+  const cityStyle = useAnimatedStyle(() => ({ transform: [{ translateX: cityX.value }] }));
+  const roadStyle = useAnimatedStyle(() => ({ transform: [{ translateX: roadX.value }] }));
+
   const startGame = useCallback(() => {
-    distanceRef.current = 0;
-    physicsRef.current = { jumpHeight: 0, verticalVelocity: 0 };
-    carXRef.current = widthRef.current + getRandomGap();
-    cityXRef.current = 0;
-    roadXRef.current = 0;
-    lastTimeRef.current = 0;
+    passedCars.value = 0;
+    countedCurrentCar.value = false;
+    jumpHeight.value = 0;
+    verticalVelocity.value = 0;
+    isFlipping.value = false;
+    flipRotation.value = 0;
+    carX.value = width.value + getRandomGap();
+    cityX.value = 0;
+    roadX.value = 0;
+    running.value = true;
     setScore(0);
-    setJumpSequence(0);
+    scoreRef.current?.setNativeProps({ text: '0 🚓' });
     setPhase('running');
-    phaseRef.current = 'running';
-    placeSprites();
-    frameRef.current = requestAnimationFrame(tick);
-  }, [placeSprites, tick]);
+  }, [
+    carX,
+    cityX,
+    countedCurrentCar,
+    flipRotation,
+    isFlipping,
+    jumpHeight,
+    passedCars,
+    roadX,
+    running,
+    verticalVelocity,
+    width,
+  ]);
 
-  const handlePress = useCallback(() => {
-    if (phaseRef.current !== 'running') {
+  const handlePress = useCallback((): JumpKind => {
+    if (!running.value) {
       startGame();
-      return;
+      return 'none';
     }
-    const nextPhysics = startJump(physicsRef.current);
-    if (nextPhysics !== physicsRef.current) {
-      physicsRef.current = nextPhysics;
-      setJumpSequence((current) => current + 1);
+    if (jumpHeight.value === 0 && verticalVelocity.value === 0) {
+      verticalVelocity.value = JUMP_VELOCITY;
+      const shouldFlip = shouldFlipOverCar(passedCars.value, carX.value);
+      isFlipping.value = shouldFlip;
+      flipRotation.value = 0;
+      return shouldFlip ? 'flip' : 'regular';
     }
-  }, [startGame]);
+    return 'none';
+  }, [
+    carX,
+    flipRotation,
+    isFlipping,
+    jumpHeight,
+    passedCars,
+    running,
+    startGame,
+    verticalVelocity,
+  ]);
 
-  const handleLayout = useCallback((event: LayoutChangeEvent) => {
-    widthRef.current = event.nativeEvent.layout.width;
-  }, []);
-
-  useEffect(
-    () => () => {
-      phaseRef.current = 'idle';
-      if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
+  const handleLayout = useCallback(
+    (event: LayoutChangeEvent) => {
+      width.value = event.nativeEvent.layout.width;
     },
-    [],
+    [width],
   );
 
   return {
-    carRef,
-    cityRef,
+    carStyle,
+    cityStyle,
     handleLayout,
     handlePress,
-    jumpSequence,
     phase,
     record,
-    roadRef,
+    roadStyle,
     score,
-    skaterRef,
+    scoreRef,
+    skaterStyle,
   };
 }
