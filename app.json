@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "Focus Flow",
+    "slug": "focus-flow",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "focusflow",
+    "userInterfaceStyle": "light",
+    "plugins": ["expo-router"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.example.focusflow"
+    },
+    "android": {
+      "package": "com.example.focusflow",
+      "predictiveBackGestureEnabled": false
+    }
+  }
+}
