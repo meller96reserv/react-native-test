@@ -13,3 +13,4 @@ coverage/
 *.orig.*
 web-build/
 expo-qr.png
+config.bat
