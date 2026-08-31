@@ -24,6 +24,8 @@
 | Валидация          | узкий runtime parser хранимой записи        | AsyncStorage считается недоверенным источником             |
 | Тесты              | Jest + React Native Testing Library         | проверка reducer, persistence и ключевых UI-сценариев      |
 | Форматирование     | ESLint + Prettier                           | воспроизводимый quality gate                               |
+| Игровые анимации   | Reanimated UI runtime                       | стабильные transforms без покадровых React-render          |
+| Игровое аудио      | Expo Audio                                  | локальные эффекты и музыка с управлением жизненным циклом  |
 
 Намеренно не добавляются сетевой клиент, backend-state библиотека, UI-фреймворк и FlashList:
 в текущем ТЗ нет сети, сложного серверного состояния или длинного динамического списка.
@@ -43,6 +45,8 @@ src/
     onboarding/              # экран и локальные элементы onboarding
     paywall/                 # тарифы, экран, purchase use case
     home/                    # главный контент
+      game/                  # runtime, engine, config, audio, record persistence
+        components/          # HUD, сцена, фон, дорога и спрайты
   session/                   # session model, provider, hooks, reducer
   storage/                   # интерфейс и AsyncStorage-реализация
   theme/                     # цвета, spacing, typography, radius
@@ -118,12 +122,13 @@ paywall. Route guard также не позволяет вручную откр�
 
 - Контекст разделяется на state/actions либо значение стабилизируется, чтобы действия не меняли
   identity на каждом render.
-- Статические данные тарифов и home-контента объявляются вне компонентов.
+- Статические данные тарифов и конфигурация игры объявляются вне компонентов.
 - `React.memo` применяется к карточке тарифа и другим повторяющимся leaf-компонентам.
 - Callbacks стабилизируются там, где передаются memoized children.
-- Для пары статичных home-карточек используется обычный layout; виртуализация была бы дороже.
-- Анимации остаются короткими и трансформируют `opacity/transform`; тяжёлая JS-анимация не нужна.
-- Изображения, если появятся, используют известные размеры и Expo Image для кеширования.
+- Игровая сцена разделена на memoized HUD, фон, дорогу, overlay и спрайты.
+- Координаты, collision detection и transforms исполняются одним frame callback на UI runtime.
+- React state меняется только на границах фаз; счёт не вызывает render всей сцены.
+- Повторяющийся городской слой растрируется платформой и двигается только через transform.
 
 ## 9. Ошибки и наблюдаемость
 

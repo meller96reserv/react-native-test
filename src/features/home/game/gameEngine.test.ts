@@ -3,6 +3,8 @@ import {
   getRandomGap,
   getSpeed,
   hasCollision,
+  hasPassedCar,
+  shouldFlipOverCar,
   startJump,
   updatePhysics,
 } from './gameEngine';
@@ -40,5 +42,16 @@ describe('skater game engine', () => {
   it('wraps the city background without a visible stop', () => {
     expect(advanceLoopPosition(-90, 20, 100)).toBe(-10);
     expect(advanceLoopPosition(-20, 15, 100)).toBe(-35);
+  });
+
+  it('counts a car only after it fully passes the skater', () => {
+    expect(hasPassedCar(-30)).toBe(true);
+    expect(hasPassedCar(-20)).toBe(false);
+  });
+
+  it('enables a flip only for an approaching fifth car', () => {
+    expect(shouldFlipOverCar(4, 200)).toBe(true);
+    expect(shouldFlipOverCar(3, 200)).toBe(false);
+    expect(shouldFlipOverCar(4, 300)).toBe(false);
   });
 });

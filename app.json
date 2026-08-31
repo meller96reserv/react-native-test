@@ -7,7 +7,7 @@
     "scheme": "focusflow",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#100718",
-    "plugins": ["expo-router", "expo-audio", "expo-font"],
+    "plugins": ["expo-router", "expo-audio", "expo-font", "expo-asset"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.example.focusflow"
